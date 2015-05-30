@@ -1,0 +1,9 @@
+*.pdf
+*.png
+*.gz
+*.pkl
+datasets/*
+nn/
+*nohup.out
+tsne/bhtsne/
+tsne/compressed_results/
