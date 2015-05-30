@@ -114,61 +114,60 @@ def to_rgb_array(img, size):
         
 if __name__ == "__main__":
 
-    # data = None
-    # 
-    # if os.path.isfile("CIFAR_resized.pkl.gz"):
-    #     print("Loading resized images from CIFAR_resized.pkl.gz...")
-    #     f = gzip.open("CIFAR_resized.pkl.gz")
-    #     resized_data = cPickle.load(f)
-    #     f.close() 
-    # 
-    # else:
-    #     print("Resizing CIFAR-10 images...")
-    #     for i in range(1, 6):
-    #         f = open("../datasets/cifar-10-batches-py/data_batch_{}".format(i))
-    #         dict = cPickle.load(f)
-    #         f.close()
-    #         if data is None:
-    #             data = dict["data"]
-    #         else:
-    #             data = numpy.vstack((data, dict["data"]))
-    #         
-    # 
-    #     resized_data = []
-    # 
-    #     for img in data:
-    #         img = to_rgb_array(img, 32 * 32)
-    #         img = img.reshape((32, 32, 3))
-    #         img = imresize(img, (12,12))
-    #         resized_data.append(img.reshape(12 * 12 * 3))
-    #     print("Writing resized images to CIFAR_resized.pkl.gz...")
-    #     f = gzip.open("CIFAR_resized.pkl.gz", "wb")
-    #     cPickle.dump(resized_data, f)
-    #     f.close()
-    # 
-    #     
-    # x = numpy.asarray(resized_data, dtype=theano.config.floatX)
-    # n_samples, n_dims = x.shape
-    # kmeans = KMeans(x, 500)
-    #     
-    # print("Init centroids:")
-    # print(kmeans.centroids.get_value())
-    # for i in range(10):
-    #     print("Iteration {}".format(i+1))
-    #     kmeans.centroids.set_value(kmeans.update_centroids())
-    # print("Final centroids:")
-    # print(kmeans.centroids.get_value())
-    # 
-    # D = kmeans.centroids.get_value().T
-    # 
+    data = None
+    
+    if os.path.isfile("CIFAR_resized.pkl.gz"):
+        print("Loading resized images from CIFAR_resized.pkl.gz...")
+        f = gzip.open("CIFAR_resized.pkl.gz")
+        resized_data = cPickle.load(f)
+        f.close() 
+    
+    else:
+        print("Resizing CIFAR-10 images...")
+        for i in range(1, 6):
+            f = open("../datasets/cifar-10-batches-py/data_batch_{}".format(i))
+            dict = cPickle.load(f)
+            f.close()
+            if data is None:
+                data = dict["data"]
+            else:
+                data = numpy.vstack((data, dict["data"]))
+            
+    
+        resized_data = []
+    
+        for img in data:
+            img = to_rgb_array(img, 32 * 32)
+            img = img.reshape((32, 32, 3))
+            img = imresize(img, (12,12))
+            resized_data.append(img.reshape(12 * 12 * 3))
+        print("Writing resized images to CIFAR_resized.pkl.gz...")
+        f = gzip.open("CIFAR_resized.pkl.gz", "wb")
+        cPickle.dump(resized_data, f)
+        f.close()
+    
+        
+    x = numpy.asarray(resized_data, dtype=theano.config.floatX)
+    n_samples, n_dims = x.shape
+    kmeans = KMeans(x, 500)
+        
+    print("Init centroids:")
+    print(kmeans.centroids.get_value())
+    for i in range(10):
+        print("Iteration {}".format(i+1))
+        kmeans.centroids.set_value(kmeans.update_centroids())
+    print("Final centroids:")
+    print(kmeans.centroids.get_value())
+    
+    D = kmeans.centroids.get_value().T
+    
     # f = gzip.open("temp.pkl.gz", "wb")
     # cPickle.dump(D, f)
     # f.close()
-
-    f = gzip.open("temp.pkl.gz")
-    D = cPickle.load(f)
-    f.close()
-    
+    # 
+    # f = gzip.open("temp.pkl.gz")
+    # D = cPickle.load(f)
+    # f.close()
 
     n_h = 20
     n_w = 25

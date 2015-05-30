@@ -89,6 +89,7 @@ def scatterplot(pca, x_train, y_train, n_classes, outputfile):
     :param y_train: input labels
     :param n_classes: number of classes of input data
     """
+
     fig, plots = plt.subplots(10, 10)
     fig.set_size_inches(50, 50)
     plt.prism()

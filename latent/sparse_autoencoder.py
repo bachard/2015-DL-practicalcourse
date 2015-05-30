@@ -68,7 +68,6 @@ class SparseAutoencoder(object):
     def KL_divergence(self, p, q):
         return p * (T.log(p) - T.log(q)) + (1 - p) * (T.log(1 - p) - T.log(1 - q))
         
-   
     
 def load_data(dataset):
 
@@ -98,6 +97,7 @@ def load_data(dataset):
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y),
             (test_set_x, test_set_y)]
     return rval
+
 
 def visualize_matrix(matrix, n_h, n_w, imgsize, outputfile):
     
@@ -182,6 +182,7 @@ def test_SPA(dataset='mnist.pkl.gz', n_hidden=5, learning_rate=0.1, batch_size=2
             c.append(train_spa(batch_index))
 
         print 'Training epoch %d, cost ' % epoch, numpy.mean(c)
+<<<<<<< HEAD
     
 
     pixels = spa.pixels.eval()
