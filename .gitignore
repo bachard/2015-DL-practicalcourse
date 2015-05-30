@@ -1,4 +1,5 @@
 *~
+*.pyc
 *.pdf
 *.png
 *.gz
@@ -6,5 +7,5 @@
 datasets/cifar-10-batches-py
 nn/
 *nohup.out
-tsne/bhtsne/
+tsne/bhtsne/bh_tsne
 tsne/compressed_results/
