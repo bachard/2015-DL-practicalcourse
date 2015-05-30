@@ -1,8 +1,9 @@
+*~
 *.pdf
 *.png
 *.gz
 *.pkl
-datasets/*
+datasets/cifar-10-batches-py
 nn/
 *nohup.out
 tsne/bhtsne/
