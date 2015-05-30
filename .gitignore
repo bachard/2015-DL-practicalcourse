@@ -7,5 +7,5 @@
 datasets/cifar-10-batches-py
 nn/
 *nohup.out
-tsne/bhtsne/bh_tsne
+tsne/bhtsne/
 tsne/compressed_results/
