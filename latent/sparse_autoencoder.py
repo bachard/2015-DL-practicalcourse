@@ -7,6 +7,9 @@ import climin
 import gzip
 import cPickle
 
+import climin
+import climin.util
+
 from matplotlib import pyplot as plt
 
 # We import the utils file
@@ -24,7 +27,26 @@ class SparseAutoencoder(object):
         Initial values for W, b, b'
         """
         rng = numpy.random.RandomState(1211)
-        W_values = numpy.asarray(
+
+        self.n_in = n_in
+        self.n_hidden = n_hidden
+        
+        self.params = T.vector()
+        
+        self.W = self.params[:n_in*n_hidden].reshape((n_in, n_hidden))
+
+        self.b = self.params[n_in*n_hidden:n_in*n_hidden + n_hidden].reshape((n_hidden,))
+
+        self.b_prime = self.params[n_in*n_hidden + n_hidden:].reshape((n_in,))
+        self.W_prime = self.W.T
+
+        self.params_list = [self.W, self.b, self.b_prime]
+
+        # we initialize the weight matrix values which are uniformly
+        # sampled from 4 *sqrt(-6./(n_in+n_hidden)) and 4 * sqrt(6./(n_in+n_hidden))
+        # for sigmoid activation function;
+        # (according to MLP tutorial on https://http://deeplearning.net/tutorial/mlp.html)
+        self.W_values = numpy.asarray(
             rng.uniform(
                 low=-4 * numpy.sqrt(6. / (n_in + n_hidden)),
                 high=4 * numpy.sqrt(6. / (n_in + n_hidden)),
@@ -33,19 +55,11 @@ class SparseAutoencoder(object):
             dtype=theano.config.floatX
         )
 
-        self.W = theano.shared(value=W_values, name='W', borrow=True)
+        self.b_values = numpy.zeros((n_hidden,), dtype=theano.config.floatX)
 
-        self.b = theano.shared(value=numpy.zeros((n_hidden,), dtype=theano.config.floatX),
-                          name='b',
-                          borrow=True)
+        self.b_prime_values = numpy.zeros((n_in,), dtype=theano.config.floatX)
 
-        self.b_prime = theano.shared(value=numpy.zeros((n_in,), dtype=theano.config.floatX),
-                          name='b',
-                          borrow=True)
-
-        self.W_prime = self.W.T
-
-        self.params = [self.W, self.b, self.b_prime]
+        self.params_values = numpy.concatenate([self.W_values.flatten(), self.b_values.flatten(), self.b_prime_values.flatten()])
         
         self.x = input
 
@@ -61,130 +75,118 @@ class SparseAutoencoder(object):
         
         self.sum_KL_divergence = T.sum(self.KL_divergence(self.rho, self.average_activation))
 
-        # cost = sum_{i=1}^m ||x_i - z_i||^2 + beta*sum_KL_divergence
+        # cost = sum_{i=1}^m ||x_i - z_i||^2
         self.cost = T.mean((self.x-self.activation).norm(L=2, axis=1)**2)
-
-        self.cost_L1_pen = self.cost + lambda_ * T.mean((self.activation_hl).norm(L=1, axis=1))
-        
+        # cost with L1 regularisation parameter
+        self.cost_L1 = self.cost + lambda_ * T.mean((self.activation_hl).norm(L=1, axis=1))
+        # cost with KL regularisation parameter
         self.cost_KL = self.cost + self.beta*self.sum_KL_divergence
 
-        # Visualization
-        self.pixels = self.W / self.W.norm(L=2, axis=0)
-
+        
     def KL_divergence(self, p, q):
         return p * (T.log(p) - T.log(q)) + (1 - p) * (T.log(1 - p) - T.log(1 - q))
         
-    
-def load_data(dataset):
+    def set_values(self):
+        """Sets the values of matrix of weights W and bias vectors b and b_prime contained in params_values"""
+        self.W_values = self.params_values[:self.n_in*self.n_hidden].reshape((self.n_in, self.n_hidden))
+        self.b_values = self.params_values[self.n_in*self.n_hidden:self.n_in*self.n_hidden + self.n_hidden].reshape((self.n_hidden,))
+        self.b_prime_values = self.params_values[self.n_in*self.n_hidden + self.n_hidden:].reshape((self.n_in,))
 
-    print '... loading data'
 
-    # Load the dataset
+
+
+        
+def test_SPA(dataset="../datasets/mnist.pkl.gz", n_in=28*28, n_hidden=5, learning_rate=0.1, momentum=0.0, cost_param=None, lambda_=0.0, batch_size=200, max_iters=15):
+
+
+    # We load the dataset
     f = gzip.open(dataset, 'rb')
     train_set, valid_set, test_set = cPickle.load(f)
     f.close()
+       
+    x_train, y_train = train_set
+    x_valid, y_valid = valid_set
+    x_test, y_test = test_set
 
-    def shared_dataset(data_xy, borrow=True):
-        
-        data_x, data_y = data_xy
-        shared_x = theano.shared(numpy.asarray(data_x,
-                                               dtype=theano.config.floatX),
-                                 borrow=borrow)
-        shared_y = theano.shared(numpy.asarray(data_y,
-                                               dtype=theano.config.floatX),
-                                 borrow=borrow)
-        
-        return shared_x, T.cast(shared_y, 'int32')
+    y_train = y_train.astype(dtype='int32')
+    y_valid = y_valid.astype(dtype='int32')
+    y_test = y_test.astype(dtype='int32')
 
-    test_set_x, test_set_y = shared_dataset(test_set)
-    valid_set_x, valid_set_y = shared_dataset(valid_set)
-    train_set_x, train_set_y = shared_dataset(train_set)
+    # we construct the minibatches sequence to be passed to the climin optimizer
+    args = ((i, {}) for i in climin.util.iter_minibatches([x_train], batch_size, [0]))
 
-    rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y),
-            (test_set_x, test_set_y)]
-    return rval
-
-
-def test_SPA(dataset="../datasets/mnist.pkl.gz", n_hidden=5, learning_rate=0.1, batch_size=20, training_epochs=15):
-
-    datasets = load_data(dataset)
-
-    train_set_x, train_set_y = datasets[0]
-
-    n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-
-    index = T.lscalar()
+    # theano symbolic representations of x (input)
     x = T.matrix('x')
 
-    n_in = 28 * 28
-        
     spa = SparseAutoencoder(
         input=x,
         n_in=n_in,
         n_hidden=n_hidden,
-        lambda_=0.,
+        lambda_=lambda_,
         sparsity_parameter=0.01,
         beta=0.5
     )
 
-    cost = spa.cost
-    g_params = [T.grad(cost, param) for param in spa.params]
-    updates = [(param, param - learning_rate * g_param) for (param, g_param) in zip(spa.params, g_params)]
+    if cost_param == "L1":
+        cost = spa.cost_L1
+    elif cost_param == "KL":
+        cost = spa.cost_KL
+    else:
+        cost = spa.cost
+        
+    g_params = T.concatenate([T.grad(cost, param).flatten() for param in spa.params_list])
     
-    f_cost = theano.function(
-        inputs=[index],
-        outputs=[cost],
-        givens={
-            x: train_set_x[index * batch_size : (index + 1) * batch_size]
-        }
+    f_cost = theano.function([spa.params, x], cost)
+    f_g_params = theano.function([spa.params, x], g_params)
+    f_output = theano.function([spa.params, x], spa.activation)
+    # number of iterations to process all the input set once
+    pass_size = x_train.shape[0] / batch_size
+
+    # climin Gradient Descent optimizer
+    opt_gd = climin.GradientDescent(
+        wrt=spa.params_values,
+        fprime=f_g_params,
+        step_rate=learning_rate,
+        momentum=momentum,
+        momentum_type="standard",
+        args=args
     )
 
-    f_g_params = theano.function(
-        inputs=[index],
-        outputs=g_params,
-        givens={
-            x: train_set_x[index * batch_size : (index + 1) * batch_size]
-        }
-    )
+    n_pass = 0
+    print("Optimisation using gradient descent...")
+    for info in opt_gd:
+        n_iter = info['n_iter']
+        # we display information
+        if n_iter % pass_size == 0 or n_iter == 1:
+            print("Cost at pass {}: {}".format(n_pass, f_cost(spa.params_values, x_train)))
+            n_pass += 1
+        if n_iter >= max_iters*pass_size:
+            break
 
-    train_spa = theano.function(
-        inputs=[index],
-        outputs=[cost],
-        updates=updates,
-        givens={
-            x: train_set_x[index * batch_size : (index + 1) * batch_size]
-        }
-    )
-
-
-    # go through training epochs
-    for epoch in xrange(training_epochs):
-        # go through trainng set
-        c = []
-        for batch_index in xrange(n_train_batches):
-            c.append(train_spa(batch_index))
-
-        print 'Training epoch %d, cost ' % epoch, numpy.mean(c)
-
-    pixels = spa.pixels.eval()
-
-    f_output_100 = theano.function(
-        inputs=[],
-        outputs = spa.activation,
-        givens={
-            x: train_set_x[0: 100]
-        }
-    )
-
-    output_100 = f_output_100()
-    utils.visualize_matrix(output_100, 10, 10, 28, "autoencodererr.png", cmap="gray_r", dpi=300)
     
-    utils.visualize_matrix(pixels.T, 28, 28, 28, "autoencoderfilter.png", cmap="gray_r", dpi=300)
-    print(pixels.shape)
-    print(spa.W.get_value().shape)
-                
+    
+    
+    spa.set_values()
+    output_100 = f_output(spa.params_values, x_train[0:100])
+    
+    print("Saving SPA reconstruction errors on first 100 MNIST digits to autoencodererr.png...")
+    utils.visualize_matrix(output_100, 100, 28, "autoencodererr.png", cmap="gray_r", dpi=300)
+
+    # Visualization
+    pixels = spa.W_values / numpy.linalg.norm(spa.W_values, 2, axis=0)
+    print("Saving SPA filters visualization to autoencoderfilter.png...")
+    utils.visualize_matrix(pixels.T, n_hidden, 28, "autoencoderfilter.png", cmap="gray_r", dpi=300)
+                    
 
 if __name__ == '__main__':
-    test_SPA(n_hidden=28*28, training_epochs=40)
+    test_SPA(
+        n_hidden=500,
+        learning_rate=0.1,
+        momentum=0.01,
+        cost_param="L1",
+        lambda_=0.1,
+        batch_size=20,
+        max_iters=20
+    )
         
         

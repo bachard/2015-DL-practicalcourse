@@ -161,16 +161,15 @@ if __name__ == "__main__":
     
     D = kmeans.centroids.get_value().T
     
-    # f = gzip.open("temp.pkl.gz", "wb")
-    # cPickle.dump(D, f)
-    # f.close()
-    # 
-    # f = gzip.open("temp.pkl.gz")
-    # D = cPickle.load(f)
-    # f.close()
+    f = gzip.open("temp.pkl.gz", "wb")
+    cPickle.dump(D, f)
+    f.close()
+     
+    f = gzip.open("temp.pkl.gz")
+    D = cPickle.load(f)
+    f.close()
 
-    n_h = 20
-    n_w = 25
+    n_h, n_w = utils.layout_shape(500)
 
     receptive_fields = numpy.zeros((n_h * 12, n_w * 12, 3))
     
@@ -186,8 +185,10 @@ if __name__ == "__main__":
     ax = fig.add_subplot(1,1,1)
     xticks = numpy.arange(0, n_w * 12, 12)                                              
     yticks = numpy.arange(0, n_h * 12, 12)
-    ax.set_xticks(xticks)                                                       
-    ax.set_yticks(yticks)                                        
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([i for (i,x) in enumerate(xticks)]) 
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([i for (i,y) in enumerate(yticks)])
     ax.grid(which="both", linestyle='-')
 
     

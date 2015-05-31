@@ -12,6 +12,7 @@ import itertools
 
 from matplotlib import pyplot as plt
 
+import copy
 # We import the utils file
 import sys
 sys.path.append("..")
@@ -185,10 +186,20 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
     train_errors = []
     valid_errors = []
     test_errors = []
-    previous_valid_error = None
+
+    patience = 2 * pass_size
+    patience_increase = 2
+    
     train_error = None
     valid_error = None
     test_error = None
+    
+    best_params = None
+    improvement_threshold = 0.995
+    best_valid_error = numpy.inf
+    n_iter_best = 0
+
+    n_pass = 0
     
     for info in opt:
         n_iter = info['n_iter']
@@ -198,53 +209,69 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
         test_error = f_errors(classifier.params_values, x_test, y_test) * 100
 
         # we display information
-        if n_iter % 100 == 0 or n_iter == 1:
-            print("Errors at iteration {}: training set {} %, validation set {} %, test set {} %".format(
+        if n_iter % pass_size == 0 or n_iter == 1:
+            print("Errors at iteration {} (pass {}): training set {} %, validation set {} %, test set {} %".format(
                 n_iter,
+                n_pass,
                 train_error,
                 valid_error,
                 test_error)
             )
-        
+
+            n_pass += 1
+            
+            if valid_error < best_valid_error:
+                if valid_error < best_valid_error * improvement_threshold:
+                    patience = max(patience, n_iter + patience_increase * pass_size)
+                best_valid_error = valid_error
+                best_params = copy.deepcopy(classifier.params_values)
+                n_iter_best = n_iter
+                
         train_errors.append(train_error)
         valid_errors.append(valid_error)
         test_errors.append(test_error)
-        # if not previous_valid_error is None:
-        #     delta = previous_valid_error - valid_error
-        #     if delta < stopping_criteria:
-        #         print("Stopping criteria was reached at iteration {}...".format(n_iter))
+        
+        if n_iter > patience:
+            break
+        
         if n_iter >= max_iter * pass_size:
             break
-        if test_error < 7:
-            break
+        
 
+    train_errors = train_errors[:n_iter_best]
+    test_errors = test_errors[:n_iter_best]
+    valid_errors = valid_errors[:n_iter_best]
+        
     print("Errors at final iteration: training set {} %, validation set {} %, test set {} %".format(
-        train_error,
-        valid_error,
-        test_error)
+        train_errors[-1],
+        valid_errors[-1],
+        test_errors[-1])
     )
+    
     print("Minimum test error achieved {} %".format(min(test_errors)))
-    n_iter = len(train_errors)
 
+    n_iters = len(train_errors)
+
+    classifier.params_values = best_params
+    
     classifier.set_values()
     
     print("Saving receptive fields to repflds.png...")
-    utils.visualize_matrix(classifier.W_values.T, 1, 10, 28, "repflds.png", cmap="gray_r", dpi=150)
+    utils.visualize_matrix(classifier.W_values.T, 10, 28, "repflds.png", cmap="gray_r", dpi=150)
 
     print("Plotting errors to errors.png...")
-    iters = numpy.arange(n_iter)
+    iters = numpy.arange(n_iters)
     plt.clf()
     plt.plot(iters, train_errors, 'b', iters, valid_errors, 'g', iters, test_errors, 'r')
     plt.savefig("error.png")
 
 
 
-
 if __name__ == "__main__":
     train_logreg(
         optimizer="GradientDescent",
-        learning_rate=0.01,
-        momentum=0.1,
-        batch_size=200,
+        learning_rate=0.1,
+        momentum=0.05,
+        batch_size=100,
         max_iter=40
     )

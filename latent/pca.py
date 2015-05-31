@@ -44,7 +44,7 @@ class PCA(object):
             outputs=X_pca
         )
 
-def plot_mnist(dataset="../datasets/mnist.pkl.gz", outputfile="scatterplotMNIST.png"):
+def plot_mnist(dataset="../datasets/mnist.pkl.gz", outputfile="scatterplotMNIST.png", imgsize=50):
     """Compute scatterplot for MNIST dataset"""
     
     print("Gathering MNIST data...")
@@ -60,7 +60,7 @@ def plot_mnist(dataset="../datasets/mnist.pkl.gz", outputfile="scatterplotMNIST.
     scatterplot(pca, x_train, y_train, 10, outputfile)
     
 
-def plot_cifar(dataset="../datasets/cifar-10-batches-py", outputfile="scatterplotCIFAR.png"):
+def plot_cifar(dataset="../datasets/cifar-10-batches-py", outputfile="scatterplotCIFAR.png", imgsize=50):
     """Compute scatterplot for CIFAR-10 dataset"""
     
     print("Gathering CIFAR data...")
@@ -83,17 +83,19 @@ def plot_cifar(dataset="../datasets/cifar-10-batches-py", outputfile="scatterplo
     scatterplot(pca, x_train, y_train, 10, outputfile)
 
 
-def scatterplot(pca, x_train, y_train, n_classes, outputfile):
+def scatterplot(pca, x_train, y_train, n_classes, outputfile, imgsize=50):
     """Construct scatterplot of (x_train, y_train) data
     
     :param pca: PCA object used for computing PCA on input data
     :param x_train: input data
     :param y_train: input labels
     :param n_classes: number of classes of input data
+    :param imgsize: size of the img 
+    :param outputfile: output file to save the plot
     """
 
     fig, plots = plt.subplots(10, 10)
-    fig.set_size_inches(50, 50)
+    fig.set_size_inches(imgsize, imgsize)
     plt.prism()
     
     for i in range(n_classes):
@@ -126,8 +128,8 @@ if __name__ == '__main__':
         print("Wrong number of parameters (usage: pca.py dataset_name (dataset_name=MNIST or CIFAR))")
     else:
         if sys.argv[1] == "MNIST":
-            plot_mnist()
+            plot_mnist(imgsize=50)
         elif sys.argv[1] == "CIFAR":
-            plot_cifar()
+            plot_cifar(imgsize=100)
         else:
             print("This dataset is unknown (available datasets: MNIST, CIFAR)")
