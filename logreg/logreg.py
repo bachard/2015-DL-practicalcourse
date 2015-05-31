@@ -238,16 +238,16 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
         test_errors.append(test_error)
 
         # we have reached early stopping criteria
-        # if n_iter > patience:
-        #     break
+        if n_iter > patience:
+            break
         
         if n_iter >= max_iters * pass_size:
             break
         
 
-    train_errors = train_errors[:n_iter_best+1]
-    test_errors = test_errors[:n_iter_best+1]
-    valid_errors = valid_errors[:n_iter_best+1]
+    train_errors = train_errors[:n_iter_best]
+    test_errors = test_errors[:n_iter_best]
+    valid_errors = valid_errors[:n_iter_best]
         
     print("Errors at final iteration: training set {} %, validation set {} %, test set {} %".format(
         train_errors[-1],
@@ -278,7 +278,7 @@ if __name__ == "__main__":
     train_logreg(
         optimizer="GradientDescent",
         learning_rate=0.1,
-        momentum=0.05,
+        momentum=0.01,
         batch_size=100,
         max_iters=40
     )

@@ -1,7 +1,6 @@
 *~
 *.pyc
 *.pdf
-*.png
 *.gz
 *.pkl
 datasets/cifar-10-batches-py

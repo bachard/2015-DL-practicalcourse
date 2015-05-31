@@ -5,16 +5,17 @@ Instructions:
 =============
 
 1. place the datasets (mnist.pkl.gz and cifar-10-python.tar.gz) in the folder "datasets", and extract the cifar dataset. The "datasets" folder should look like:
+
 ./datasets/
 ├── cifar-10-batches-py
-│   ├── batches.meta
-│   ├── data_batch_1
-│   ├── data_batch_2
-│   ├── data_batch_3
-│   ├── data_batch_4
-│   ├── data_batch_5
-│   ├── readme.html
-│   └── test_batch
+│   ├── batches.meta
+│   ├── data_batch_1
+│   ├── data_batch_2
+│   ├── data_batch_3
+│   ├── data_batch_4
+│   ├── data_batch_5
+│   ├── readme.html
+│   └── test_batch
 ├── cifar-10-python.tar.gz
 ├── mnist.pkl.gz
 └── put datasets here.txt
@@ -26,7 +27,9 @@ for their are relative imports between files
 
 3. For t-SNE, please place the bhtsne c++ implementation provided at http://lvdmaaten.github.io/tsne in the folder tsne/bhtsne, along with the python wrapper
 
-4. Python packages theano, climin matplotlib, cPickle and gzip are required
+4. Python packages theano, numpy, climin, matplotlib, scipy, cPickle and gzip are required
+
+5. For each script (except t-SNE), you can modify the parameters in the file.
 
 Questions:
 ==========
@@ -38,17 +41,15 @@ Questions:
 P8: To implemented multiclass logistic regression, I first read and follow the tutorial at http://deeplearning.net/tutorial/logreg.html to get the general idea of how to implement the logistic regression class using theano. 
 Then I adapted the code to use it with climin optimisers.
 My implementation uses climin to create the minibatches and uses the climin gradient descent optimiser as initial optimisation method.
-However it is way slower than the implementation from http://deeplearning.net/tutorial/logreg.html
+However it is much slower than the implementation from http://deeplearning.net/tutorial/logreg.html
 
-P9: Using the implementation from the tutorial, we can achieve an error rate on the test set of about 7.5%. Using my implementation with similar parameters, I can achieve an error rate on the test set of about 7.8%.
+P9: Using the implementation from the tutorial, we can achieve an error rate on the test set of about 7.5%. Using my implementation with similar parameters (learning rate = 0.13, batch size = 600), I can achieve an error rate on the test set of about 7.8%.
 
 P10: I used different climin optimisers (Gradient Descent, RMSProp, Lbfgs, Nonlinear Conjugate Gradient)
 
-P11: The receptive fields ...
-
 P12: To avoid overfitting, we stop training when the validation error increases or does not decrease enough at some point. To implement that, I took inspiration from the early stopping mechanism proposed at http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping.
 
-P13:
+P13: 
 
 Bonus question: It is a bad scientific practice because we are trying to tune the parameters of the classifier, and even modify the dataset, in order to reach a certain error rate on the test set. It does provide any improvement, and can be seen as cheating on the actual performance of the classifier.
 
@@ -66,7 +67,7 @@ P15: Using 300 hidden units with tanh activation functions and rmsprop as the in
 
 P16: 
 
-P19: 
+P19: Using RMSProp with learning rate = 0.004,  momentum = 0.001, batch size=100, we can achieve an error rate on test set of about 2%, with minimal error rate on validation set of less than 1.8%.
 
 
 
@@ -111,6 +112,7 @@ Remarks: the script will save the results of bhtsne on the data in a pkl.gz file
 
 P30: To implement k-Means I followed the paper by Adam Coates.
 
-P31: 
+P31: For this task I rescale the images from 32x32 to 12x12, and choose 500 centres.
+Visualisation of the receptive fields is not very conclusive regarding the colors, as I think I have a problem rendering the RGB components.
 
 
