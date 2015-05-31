@@ -114,5 +114,6 @@ P30: To implement k-Means I followed the paper by Adam Coates.
 
 P31: For this task I rescale the images from 32x32 to 12x12, and choose 500 centres.
 Visualisation of the receptive fields is not very conclusive regarding the colors, as I think I have a problem rendering the RGB components.
+Moreover on my machine (nvidia GTX 960), it takes about an hour for ten iterations on the entire CIFAR-10 set.
 
 

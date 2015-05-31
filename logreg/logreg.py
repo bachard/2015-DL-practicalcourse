@@ -277,8 +277,8 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
 if __name__ == "__main__":
     train_logreg(
         optimizer="GradientDescent",
-        learning_rate=0.1,
-        momentum=0.01,
-        batch_size=100,
+        learning_rate=0.08,
+        momentum=0.015,
+        batch_size=80,
         max_iters=40
     )
