@@ -18,15 +18,38 @@ sys.path.append("..")
 import utils
 
 
-
 class LogisticRegression(object):
+    """ Multiclass Logistic Regression class
+    """
+    def __init__(self, input, n_in, n_out, params=None):
+        """
+        :param input: input (theano.tensor.matrix)
+        :param n_in: number of dimensions of the input
+        :param n_out: number of classes
+        
+        :attribute W: theano representation of matrix of weights
+        :attribute b: theano representation of bias vector
+        :attribute params: theano representation of vector containing 
+        the flatten representation of W and b; can be passed to the 
+        object (useful to connect it in a MLP)
 
-    def __init__(self, input, n_in, n_out):
+        :attribute W_values: array containing the actual values of W
+        :attribute b_values: array containing the actual values of b
+        :attribute params_values: flatten representation of W_values and b_values,
+        useful for climin
 
+        :function p_y_given_x: theano function returning the value of y given x
+        :function y_pred: theano function returning the prediction for y given x
+        """
+        
         self.n_in = n_in
         self.n_out = n_out
-
-        self.params = T.vector('params')
+        
+        if params:
+            self.params = params
+        else:
+            self.params = T.vector()
+            
         self.W = self.params[:self.n_in * self.n_out].reshape((self.n_in, self.n_out))
         self.b = self.params[self.n_in * self.n_out:].reshape((self.n_out, ))
 
@@ -40,23 +63,40 @@ class LogisticRegression(object):
 
 
     def negative_loglikelihood(self, y):
+        """Theano function computing the negative loglikelihood for input x and target y """
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
 
     def errors(self, y):
+        """Theano function computing the number of prediction errors in the classifier"""
         return T.mean(T.neq(self.y_pred, y))
 
     def set_values(self):
+        """Sets the values of matrix of weights W and bias vector b contained in params_values"""
         self.W_values = self.params_values[:self.n_in * self.n_out].reshape((self.n_in, self.n_out))
         self.b_values = self.params_values[self.n_in * self.n_out:].reshape((self.n_out,))
     
     def get_values(self):
+        """Returns the values of W and b"""
         return (self.W_values, self.b_values)
     
 
 
-def optimization(dataset='mnist.pkl.gz', batch_size=100):
+def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optimizer="GradientDescent", learning_rate=0.1, momentum=0.1, batch_size=200, max_iter=40):
+    """
+    Trains a MLP with one hidden layer on a dataset (default MNIST) using climin optimizers
 
-    # Load the dataset
+    :param dataset: path to the dataset (pkl.gz file), containing train_set, valid_set and test_set
+    :param n_in: number of dimensions of the input
+    :param n_out: number of output classes
+    :param optimizer: climin optimizer to use (GradientDescent, RmsProp, Lbfgs, NonlinearConjugateGradient)
+    :param learning_rate: learning rate of the optimizer
+    :param momentum: momentum of the optimizer (only gradient descent)
+    :param batch_size: size of a mini batch
+    :param max_iter: max number of iterations for the optimizer (number of passes)
+    """
+    
+    
+    # We load the dataset
     f = gzip.open(dataset, 'rb')
     train_set, valid_set, test_set = cPickle.load(f)
     f.close()
@@ -68,33 +108,41 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
     y_train = y_train.astype(dtype='int32')
     y_valid = y_valid.astype(dtype='int32')
     y_test = y_test.astype(dtype='int32')
-    
+
+    # we construct the minibatches sequence to be passed to the climin optimizer
     args = ((i, {}) for i in climin.util.iter_minibatches([x_train, y_train], batch_size, [0, 0]))
 
+    # theano symbolic representations of x (input) and y (targets)
     x = T.matrix('x')
     y = T.ivector('y')
 
-    n_in = 28 * 28
-    n_out = 10
-    
+    # we construct the Logistic Regression classifier
     classifier = LogisticRegression(x, n_in, n_out)
-    
+
+    # symbolic cost function to be optimized
     cost = classifier.negative_loglikelihood(y)
+    # errors of the mlp
     errors = classifier.errors(y)
+
+    # we define the gradients of cost wrt the parameters of the classifier
     g_W = T.grad(cost, classifier.W)
     g_b = T.grad(cost, classifier.b)
     g_params = T.concatenate([g_W.flatten(), g_b.flatten()])
 
+    # we define the functions to be passed to the climin optimizer
     f_errors = theano.function([classifier.params, x, y], errors)
     f_cost = theano.function([classifier.params, x, y], cost)
     f_g_params = theano.function([classifier.params, x, y], g_params)
 
-        
+    # number of iterations to process all the input set once
+    pass_size = x_train.shape[0] / batch_size
+    
+    # we define different climin optimizers     
     opt_gd = climin.GradientDescent(
         wrt=classifier.params_values,
         fprime=f_g_params,
-        step_rate=0.1,
-        momentum=0.1,
+        step_rate=learning_rate,
+        momentum=momentum,
         momentum_type="standard",
         args=args
     )
@@ -102,7 +150,7 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
     opt_rmsprop = climin.RmsProp(
         wrt=classifier.params_values,
         fprime=f_g_params,
-        step_rate=0.01,
+        step_rate=learning_rate,
         args=args
     )
 
@@ -120,9 +168,19 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
         args=args
     )
 
-    opt = opt_nlcg
+    if optimizer == "GradientDescent":
+        opt = opt_gd
+    elif optimizer == "RmsProp":
+        opt = opt_rmsprop
+    elif optimizer == "Lbfgs":
+        opt = opt_lbfgs
+    elif optimizer == "NonlinearConjugateGradient":
+        opt = opt_nlcg
+    else:
+        print("Optimizer unknown, using GradientDescent (optimizers available: GradientDescent, RmsProp, Lbfgs, NonlinearConjugateGradient)")
+        opt = opt_gd
 
-
+    # we define variables to store the various errors  
     stopping_criteria = 0.0001
     train_errors = []
     valid_errors = []
@@ -139,6 +197,7 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
         valid_error = f_errors(classifier.params_values, x_valid, y_valid) * 100
         test_error = f_errors(classifier.params_values, x_test, y_test) * 100
 
+        # we display information
         if n_iter % 100 == 0 or n_iter == 1:
             print("Errors at iteration {}: training set {} %, validation set {} %, test set {} %".format(
                 n_iter,
@@ -154,7 +213,7 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
         #     delta = previous_valid_error - valid_error
         #     if delta < stopping_criteria:
         #         print("Stopping criteria was reached at iteration {}...".format(n_iter))
-        if n_iter >= 1000:
+        if n_iter >= max_iter * pass_size:
             break
         if test_error < 7:
             break
@@ -170,7 +229,7 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
     classifier.set_values()
     
     print("Saving receptive fields to repflds.png...")
-    utils.visualize_matrix(classifier.W_values.T, 1, 10, 28, "repflds.png", cmap="gray_r")
+    utils.visualize_matrix(classifier.W_values.T, 1, 10, 28, "repflds.png", cmap="gray_r", dpi=150)
 
     print("Plotting errors to errors.png...")
     iters = numpy.arange(n_iter)
@@ -182,4 +241,10 @@ def optimization(dataset='mnist.pkl.gz', batch_size=100):
 
 
 if __name__ == "__main__":
-    optimization()
+    train_logreg(
+        optimizer="GradientDescent",
+        learning_rate=0.01,
+        momentum=0.1,
+        batch_size=200,
+        max_iter=40
+    )

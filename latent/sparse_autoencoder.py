@@ -9,6 +9,12 @@ import cPickle
 
 from matplotlib import pyplot as plt
 
+# We import the utils file
+import sys
+sys.path.append("..")
+import utils
+
+
 class SparseAutoencoder(object):
 
     def __init__(self, input, n_in, n_hidden, lambda_=0.05, sparsity_parameter=0.05, beta=0.05):
@@ -99,30 +105,7 @@ def load_data(dataset):
     return rval
 
 
-def visualize_matrix(matrix, n_h, n_w, imgsize, outputfile):
-    
-    receptive_fields = numpy.zeros((n_h * imgsize, n_w * imgsize), dtype=theano.config.floatX)
-    
-    for i in range(n_h):
-        for j in range(n_w):
-            img = matrix[i * n_w + j]
-            img = img.reshape((imgsize, imgsize))
-            receptive_fields[i * imgsize: (i + 1) * imgsize, j * imgsize: (j + 1) * imgsize] = img
-    
-    fig = plt.figure()
-    
-    ax = fig.add_subplot(1,1,1)
-    xticks = numpy.arange(0, n_w * imgsize, imgsize)                                              
-    yticks = numpy.arange(0, n_h * imgsize, imgsize)
-    ax.set_xticks(xticks)                                                       
-    ax.set_yticks(yticks)                                        
-    ax.grid(which="both", linestyle='-')
-    
-    plt.set_cmap("gray_r")
-    plt.imshow(receptive_fields)
-    plt.savefig(outputfile, dpi=300)
-    
-def test_SPA(dataset='mnist.pkl.gz', n_hidden=5, learning_rate=0.1, batch_size=20, training_epochs=15):
+def test_SPA(dataset="../datasets/mnist.pkl.gz", n_hidden=5, learning_rate=0.1, batch_size=20, training_epochs=15):
 
     datasets = load_data(dataset)
 
@@ -182,8 +165,6 @@ def test_SPA(dataset='mnist.pkl.gz', n_hidden=5, learning_rate=0.1, batch_size=2
             c.append(train_spa(batch_index))
 
         print 'Training epoch %d, cost ' % epoch, numpy.mean(c)
-<<<<<<< HEAD
-    
 
     pixels = spa.pixels.eval()
 
@@ -191,14 +172,14 @@ def test_SPA(dataset='mnist.pkl.gz', n_hidden=5, learning_rate=0.1, batch_size=2
         inputs=[],
         outputs = spa.activation,
         givens={
-            x:train_set_x[0: 100]
+            x: train_set_x[0: 100]
         }
     )
 
     output_100 = f_output_100()
-    visualize_matrix(output_100, 10, 10, 28, "autoencodererr.png")
+    utils.visualize_matrix(output_100, 10, 10, 28, "autoencodererr.png", cmap="gray_r", dpi=300)
     
-    visualize_matrix(pixels.T, 28, 28, 28, "autoencoderfilter.png")
+    utils.visualize_matrix(pixels.T, 28, 28, 28, "autoencoderfilter.png", cmap="gray_r", dpi=300)
     print(pixels.shape)
     print(spa.W.get_value().shape)
                 

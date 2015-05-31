@@ -3,7 +3,7 @@ import numpy
 from matplotlib import pyplot as plt
 
 
-def visualize_matrix(matrix, n_h, n_w, imgsize, outputfile, cmap="gray"):
+def visualize_matrix(matrix, n_h, n_w, imgsize, outputfile, cmap="gray", dpi=150):
     
     receptive_fields = numpy.zeros((n_h * imgsize, n_w * imgsize), dtype=theano.config.floatX)
     
@@ -26,4 +26,4 @@ def visualize_matrix(matrix, n_h, n_w, imgsize, outputfile, cmap="gray"):
     
     plt.set_cmap(cmap)
     plt.imshow(receptive_fields)
-    plt.savefig(outputfile, dpi=300)
+    plt.savefig(outputfile, dpi=dpi)

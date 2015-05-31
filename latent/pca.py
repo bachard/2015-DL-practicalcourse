@@ -8,8 +8,7 @@ import sys
 
 class PCA(object):
 
-    """PCA class implementation using SVD
-    
+    """PCA class implementation using SVD 
     """
         
     def __init__(self, n_dims):
@@ -31,10 +30,13 @@ class PCA(object):
         mean = T.mean(X, axis=0)
         # before computing SVD we center the input
         X_centered = X - mean
-
+        
         U, S, V = T.nlinalg.svd(X_centered, full_matrices=0)
+        # the eigenvectors are the columns of the matrix V
         V = V.T
+        # we select the n_dims first eigenvectors
         V_restricted = V[:, 0:self.n_dims]
+        # we project the input along these directions
         X_pca = T.dot(X_centered, V_restricted)
                 
         return theano.function(
