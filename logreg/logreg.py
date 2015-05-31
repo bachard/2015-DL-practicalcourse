@@ -82,7 +82,7 @@ class LogisticRegression(object):
     
 
 
-def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optimizer="GradientDescent", learning_rate=0.1, momentum=0.1, batch_size=200, max_iter=40):
+def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optimizer="GradientDescent", learning_rate=0.1, momentum=0.1, batch_size=200, max_iters=40):
     """
     Trains a MLP with one hidden layer on a dataset (default MNIST) using climin optimizers
 
@@ -91,9 +91,9 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
     :param n_out: number of output classes
     :param optimizer: climin optimizer to use (GradientDescent, RmsProp, Lbfgs, NonlinearConjugateGradient)
     :param learning_rate: learning rate of the optimizer
-    :param momentum: momentum of the optimizer (only gradient descent)
+    :param momentum: momentum of the optimizer (only gradient descent & rmsprop)
     :param batch_size: size of a mini batch
-    :param max_iter: max number of iterations for the optimizer (number of passes)
+    :param max_iters: max number of iterations for the optimizer (number of passes)
     """
     
     
@@ -152,6 +152,7 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
         wrt=classifier.params_values,
         fprime=f_g_params,
         step_rate=learning_rate,
+        momentum=momentum,
         args=args
     )
 
@@ -187,18 +188,21 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
     valid_errors = []
     test_errors = []
 
-    patience = 2 * pass_size
-    patience_increase = 2
-    
     train_error = None
     valid_error = None
     test_error = None
+
+    # early stopping parameters
+    # inspired from http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping
+    patience = 2 * pass_size
+    patience_increase = 2
     
     best_params = None
     improvement_threshold = 0.995
     best_valid_error = numpy.inf
     n_iter_best = 0
 
+    # number of the actual pass
     n_pass = 0
     
     for info in opt:
@@ -208,7 +212,7 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
         valid_error = f_errors(classifier.params_values, x_valid, y_valid) * 100
         test_error = f_errors(classifier.params_values, x_test, y_test) * 100
 
-        # we display information
+        # at the end of each pass
         if n_iter % pass_size == 0 or n_iter == 1:
             print("Errors at iteration {} (pass {}): training set {} %, validation set {} %, test set {} %".format(
                 n_iter,
@@ -219,10 +223,12 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
             )
 
             n_pass += 1
-            
+
+            # we check early stopping criteria 
             if valid_error < best_valid_error:
                 if valid_error < best_valid_error * improvement_threshold:
                     patience = max(patience, n_iter + patience_increase * pass_size)
+
                 best_valid_error = valid_error
                 best_params = copy.deepcopy(classifier.params_values)
                 n_iter_best = n_iter
@@ -230,17 +236,18 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
         train_errors.append(train_error)
         valid_errors.append(valid_error)
         test_errors.append(test_error)
+
+        # we have reached early stopping criteria
+        # if n_iter > patience:
+        #     break
         
-        if n_iter > patience:
-            break
-        
-        if n_iter >= max_iter * pass_size:
+        if n_iter >= max_iters * pass_size:
             break
         
 
-    train_errors = train_errors[:n_iter_best]
-    test_errors = test_errors[:n_iter_best]
-    valid_errors = valid_errors[:n_iter_best]
+    train_errors = train_errors[:n_iter_best+1]
+    test_errors = test_errors[:n_iter_best+1]
+    valid_errors = valid_errors[:n_iter_best+1]
         
     print("Errors at final iteration: training set {} %, validation set {} %, test set {} %".format(
         train_errors[-1],
@@ -273,5 +280,5 @@ if __name__ == "__main__":
         learning_rate=0.1,
         momentum=0.05,
         batch_size=100,
-        max_iter=40
+        max_iters=40
     )

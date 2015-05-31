@@ -24,7 +24,7 @@ $ cd logreg
 $ python logreg.py
 for their are relative imports between files
 
-3. For t-SNE, please place the bhtsne python implementation provided at http://lvdmaaten.github.io/tsne in the folder tsne/bhtsne
+3. For t-SNE, please place the bhtsne c++ implementation provided at http://lvdmaaten.github.io/tsne in the folder tsne/bhtsne, along with the python wrapper
 
 4. Python packages theano, climin matplotlib, cPickle and gzip are required
 
@@ -60,16 +60,13 @@ Bonus question: It is a bad scientific practice because we are trying to tune th
 P14: To implement a neural network with one hidden layer, I first read and follow the tutorial at http://deeplearning.net/tutorial/mlp.html to get the general idea of how to implement it using theano.
 Then I adapted the code to use it with climin optimisers.
 My implementation makes it possible to use different optimisation algorithms. It uses climin to create the minibatches, uses climin gradient descent and rmsprop optimisers. L1 and L2 regularisation are also available. 
+For early stopping, as in multiclass logistic regression implementation, I took inspiration from the early stopping mechanism proposed at http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping.
 
-P15: 
+P15: Using 300 hidden units with tanh activation functions and rmsprop as the initial optimisation method, my implementation can achieve an error rate on the test set of about 2.5% (parameters: learning rate=0.05, batch size=200)
 
 P16: 
 
-P17:
-
-P18:
-
-P19:
+P19: 
 
 
 
@@ -80,7 +77,8 @@ P19:
 
 P20: I implemented PCA using Theano and the SVD decomposition of the centered input (instead of computing the eigenpairs of the covariance matrix of the input)
 
-P21: PCA scatterplot on MNIST shows that most pairs of digits can be easily classified using the 2 principal components. Exception are pairs (3,5), (4,9), (5,8), (7,9), and to a lesser extent (2,3). Indeed, the digits in each of these pairs present many similarities.
+P21: PCA scatterplot on MNIST shows that most pairs of digits can be easily classified using the 2 principal components. Exception are pairs (3,5), (4,9), (5,8), (7,9), and to a lesser extent (2,3). Indeed, the two digits in each of these pairs present many similarities, thus only selecting the 2 first principal components is not enough to classify them.
+PCA scatterplot on CIFAR-10 is not as conclusive as the previous one. Only a few classes seems to be separable using only the first 2 components. On the contrary to PCA scatterplot on MNIST, we can see than for the scatterplot for a single class, the points are much more spread. 
 
 * Sparse autoencoder - file: latent/sparse_autoencoder.py - usage: python sparse_autoencoder.py
 
@@ -88,11 +86,11 @@ P22: To implement the sparse autoencoder, I read the course at http://ufldl.stan
 I used climin gradient descent optimiser for training. 
 Several loss functions are available, L(x) = ||f(x)-x||_2^2, L_sparse(x) = L(x) + lambda*|h(x)|_1, and L_KL(x) = L(x) + beta*KL(rho)
 
-P23:
+P23: see P22
 
-P24:
+P24: The higher lambda (L1 penalty parameter) is, the thiner and more blurred the digit are after reconstruction. A higher lambda will cause the matrix of weight to be sparser, and thus it will obviously yield more reconstruction errors.
 
-P25:
+P25: The higher lambda (L1 penalty parameter) is, the more the receptive fields tends to contain no relevant information. We can see on the plots (located in results), that if lambda is high, e.g. 1.0, most of the receptive fields will contain just noise, and a few will contain what seems to be average digits (I think it is comparable to the receptive fields Logistic Regression produces). If lambda is lower, say 0.5, more receptiv fields will contain information. This is logic as a high lambda will tend to make the weight matrix of the hidden layer sparser.
 
 P26: Sparse encoding on MNIST will only keep the important features of the digit, that is keeping the shape and getting rid of the thickness of the line. Indeed, we can see that phenomena on the reconstruction plot of the first 100 digits. This seems relevant as only the shape is important to recognize a digit, not the thickness of the line.
 
@@ -101,7 +99,11 @@ Bonus problem: see P22
 5. t-SNE
 --------
 
-P29: I used Barnes-Hut implementation with Python wrapper provided at http://lvdmaaten.github.io/tsne to reproduce Figure 5 of the Barnes-Hut-SNE paper, as it is way faster than the t-SNE Python implementation.
+* BH-tSNE - file: tsne/bhtsne_mnist.py - usage: python bhtnse_mnist NUM_SAMPLES d
+
+P29: I used Barnes-Hut implementation with Python wrapper provided at http://lvdmaaten.github.io/tsne to reproduce Figure 5 of the Barnes-Hut-SNE paper, as it is way faster than the t-SNE Python implementation, and requires less memory space.
+You can modify the parameter d which affect the spacing between digits, and thus how dense the figure will be (if d is high, say 3, the digits will be relatively far from each  other, if d is low, say 1, digits will be very close to each other).
+Remarks: the script will save the results of bhtsne on the data in a pkl.gz file, so that you can modify d without having to recompute bhtsne on the data.
 
 
 6. k-Means
@@ -109,6 +111,6 @@ P29: I used Barnes-Hut implementation with Python wrapper provided at http://lvd
 
 P30: To implement k-Means I followed the paper by Adam Coates.
 
-P31:
+P31: 
 
 

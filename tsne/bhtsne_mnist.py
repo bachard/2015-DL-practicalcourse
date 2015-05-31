@@ -6,20 +6,37 @@ import bhtsne.bhtsne as bhtsne
 import os.path
 import sys
 
+
+"""
+Python procedure that produces a figure similar to the Figure 5
+in paper L.J.P. van der Maaten. Barnes-Hut-SNE. (http://arxiv.org/pdf/1301.3342v2.pdf)
+It uses Barnes-Hut implementation provided at http://lvdmaaten.github.io/tsne
+(http://lvdmaaten.github.io/tsne/code/bh_tsne.tar.gz)
+You need to compile bhtsne and place it along with the python wrapper in the foler bhtsne
+
+:param NUM_SAMPLES: number of samples to produce the figure with
+:param d: parameter that controls the spacing between digits
+"""
+
 if len(sys.argv) == 2:
     NUM_SAMPLES = min(int(sys.argv[1]), 70000)
+if len(sys.argv) == 3:
+    d = min(0.5, int(sys.argv[2]))
 else:
-    print("[ Using default number of samples 2000 ]")
+    print("[ Using default number of samples 2000 and d=3]")
     NUM_SAMPLES = 2000
+    d = 3
 
 datafilename = "bhtsne{}.pkl.gz".format(NUM_SAMPLES)
 
+# we check if the data has already been computed
 if os.path.isfile(datafilename):
     print("Loading data from {}...".format(datafilename))
     f = gzip.open(datafilename)
     X, Y = cPickle.load(f)
     f.close()
-    
+
+# if not we compute it    
 else:
     print("Computing BH-tSNE on MNIST for {} samples...".format(NUM_SAMPLES))
     dataset = "../datasets/mnist.pkl.gz"
@@ -48,7 +65,6 @@ else:
     cPickle.dump([X, Y], f)
     f.close()
 
-d = 3
     
 Y *= 28 * d
 delta = 30 # min 14
@@ -60,10 +76,9 @@ print("Positions of extrema: ({}, {}) ({}, {})".format(min_x, min_y, max_x, max_
 res = numpy.zeros((max_x - min_x + 2 * delta, max_y - min_y + 2 * delta))
 
 def transform(x,y):
-    """
-    x: x coordinate
-    y: y coordinate
-    returns the upper left point from where to draw the sample
+    """ Returns the upper left point from where to draw the sample
+    :param x: x coordinate
+    :param y: y coordinate
     """
     return (numpy.floor(x - min_x) - 14 + delta, numpy.floor(y - min_y) - 14 + delta)
 
@@ -74,7 +89,6 @@ for (x,y) in zip(X,Y):
         for j in range(28):
             if x[i, j] != 0:
                 res[orig_x + i, orig_y + j] = 1
-                
 
 print("Matrix image size: {}".format(res.shape))
 
