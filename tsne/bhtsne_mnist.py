@@ -18,7 +18,7 @@ You need to compile bhtsne and place it along with the python wrapper in the fol
 :param d: parameter that controls the spacing between digits
 """
 
-if len(sys.argv) == 2:
+if len(sys.argv) >= 2:
     NUM_SAMPLES = min(int(sys.argv[1]), 70000)
 if len(sys.argv) == 3:
     d = min(0.5, int(sys.argv[2]))

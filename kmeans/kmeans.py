@@ -8,24 +8,28 @@ import os.path
 from scipy.misc import imresize
 from matplotlib import pyplot as plt
 class KMeans(object):
-
+    """ Theano implementation of k-Means following the paper by Adam Coates
+    (http://ai.stanford.edu/~acoates/papers/coatesng_nntot2012.pdf)
     """
-
-
-    """
-
-    def __init__(self, input, k):
-
+    def __init__(self, input, k, e_zca):
         """
-        implementation according to the pdf
+        :param input: input (theano.tensor.matrix)
+        :param k: number of centroids
+        :param e_zca: epsilon parameter used in ZCA whitening
+        :attribute centroids: theano shared variable containing the centroids
+               
+        :function normalize_input: theano function computing normalized input (following previously cited paper)
+        :function whiten_input: theano function computing ZCA whitening of the input (following previously cited paper)
+        :function update_centroids: theano function computing the updates of the centroids (following previously cited paper)
         """
+        
         self.n_samples, self.n_dims = input.shape
         self.k = k
-
+        self.e_zca = e_zca
         self.normalize_input = self._normalize_input()
         self.whiten_input = self._whiten_input(self.n_samples)
 
-        # in the process the input is rotated: the columns are the samples
+        # in the process the input is rotated: the columns contains the samples
         self.x = numpy.asarray(self.whiten_input(self.normalize_input(input)), dtype=theano.config.floatX)
 
         # initialize centroids: normally distributed random vectors on the unit sphere
@@ -40,11 +44,6 @@ class KMeans(object):
             borrow=True
         )
         
-        self.S = theano.shared(
-            numpy.zeros((self.n_samples, self.k), dtype=theano.config.floatX),
-            borrow=True
-        )
-
         self.update_centroids = self._update_centroids()
         
     def _normalize_input(self):
@@ -59,15 +58,13 @@ class KMeans(object):
     def _whiten_input(self, n): 
         X = T.matrix('X', dtype=theano.config.floatX)
 
-        e_zca = 0.01
-
         cov = T.dot(X.T, X) / (n - 1)
         
         eigenvalues, eigenvectors = T.nlinalg.eig(cov)
 
         V = eigenvectors
         D = eigenvalues
-        D_prime = T.nlinalg.alloc_diag(T.inv(T.sqrt(D + e_zca)))
+        D_prime = T.nlinalg.alloc_diag(T.inv(T.sqrt(D + self.e_zca)))
                 
         M = T.dot(V, T.dot(D_prime, V.T))
 
@@ -76,12 +73,11 @@ class KMeans(object):
 
 
     def _update_centroids(self):
-
+        
         X = T.matrix('X')
         D = T.matrix('D')
         zeros = numpy.zeros((self.n_samples, self.k), dtype=theano.config.floatX)
         
-        # D[T.arange(self.n_samples), T.argmax(T.abs_(T.dot(self.centroids.T, X)), axis=0).eval()]
         output = T.matrix("output")
 
         def set_value(i, j, value, prior_output):
@@ -110,10 +106,23 @@ class KMeans(object):
     
 
 def to_rgb_array(img, size):
+    """Correctly reshape an image containing RGB values represented as a vector,
+    e.g. CIFAR-10 images, to be in the same shape as PIL/numpy convention
+    """
     return numpy.asarray([(img[i], img[i + size], img[i + 2 * size]) for i in range(size)])
         
-if __name__ == "__main__":
 
+def train_kmeans(k=500, e_zca=0.01, n_iters=10, n_cifar_batches=5):
+    """
+    Trains a k-Means model on CIFAR-10 dataset, resizing the image from 32x32 to 12x12
+    
+    :param k: number of centroids
+    :param e_zca: epsilon parameter used in ZCA whitening
+    :param n_iters: number of iterations to update centroids
+    :param n_cifar_batches: number of CIFAR-10 batches to use
+    """
+    # First we gather and resize the images
+    # for convenience we save the resized CIFAR images in a pkl.gz file
     data = None
     
     if os.path.isfile("CIFAR_resized.pkl.gz"):
@@ -124,7 +133,7 @@ if __name__ == "__main__":
     
     else:
         print("Resizing CIFAR-10 images...")
-        for i in range(1, 6):
+        for i in range(1, n_cifar_batches+1):
             f = open("../datasets/cifar-10-batches-py/data_batch_{}".format(i))
             dict = cPickle.load(f)
             f.close()
@@ -146,30 +155,26 @@ if __name__ == "__main__":
         cPickle.dump(resized_data, f)
         f.close()
     
-        
+
+    # Then we initialize the model
     x = numpy.asarray(resized_data, dtype=theano.config.floatX)
     n_samples, n_dims = x.shape
-    kmeans = KMeans(x, 500)
-        
-    print("Init centroids:")
-    print(kmeans.centroids.get_value())
-    for i in range(10):
-        print("Iteration {}".format(i+1))
-        kmeans.centroids.set_value(kmeans.update_centroids())
-    print("Final centroids:")
-    print(kmeans.centroids.get_value())
-    
-    D = kmeans.centroids.get_value().T
-    
-    f = gzip.open("temp.pkl.gz", "wb")
-    cPickle.dump(D, f)
-    f.close()
-     
-    f = gzip.open("temp.pkl.gz")
-    D = cPickle.load(f)
-    f.close()
 
-    n_h, n_w = utils.layout_shape(500)
+    print("Initializing model...")
+    kmeans = KMeans(x, k, e_zca)
+
+    print("Starting k-Means training...")
+
+    for i in range(n_iters):
+        print("Iteration {}...".format(i+1))
+        kmeans.centroids.set_value(kmeans.update_centroids())
+        
+    # final centroids
+    D = kmeans.centroids.get_value().T
+
+    print("Saving receptive fields to repflds.png...")
+    # same function as in utils.py modified for RGB images
+    n_h, n_w = utils.layout_shape(k)
 
     receptive_fields = numpy.zeros((n_h * 12, n_w * 12, 3))
     
@@ -191,7 +196,13 @@ if __name__ == "__main__":
     ax.set_yticklabels([i for (i,y) in enumerate(yticks)])
     ax.grid(which="both", linestyle='-')
 
-    
     plt.imshow(receptive_fields)
     plt.savefig("repflds.png", dpi=300)
     
+if __name__ == "__main__":
+    train_kmeans(
+        k=500,
+        e_zca=0.01,
+        n_iters=10,
+        n_cifar_batches=5
+    )
