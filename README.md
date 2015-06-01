@@ -29,10 +29,16 @@ for their are relative imports between files
 
 4. Python packages theano, numpy, climin, matplotlib, scipy, cPickle and gzip are required
 
-5. For each script (except t-SNE), you can modify the parameters in the file.
+5. For each script (except t-SNE), you can modify the parameters directly in the file.
 
 Questions:
 ==========
+
+1. Remarks
+----------
+* In the file utils.py, I implemented a function to easily visualize receptive fields (values of matrix of weights) named visualize_matrix.
+
+* To evaluate my implementations results on MNIST, I used the database provided at http://yann.lecun.com/exdb/mnist/
 
 2. Multiclass logistic regression
 ---------------------------------
@@ -44,14 +50,15 @@ My implementation uses climin to create the minibatches and uses the climin grad
 However it is much slower than the implementation from http://deeplearning.net/tutorial/logreg.html
 
 P9: Using the implementation from the tutorial, we can achieve an error rate on the test set of about 7.5%. Using my implementation with similar parameters (learning rate = 0.13, batch size = 600), I can achieve an error rate on the test set of about 7.8%.
+According to the database results on MNIST at http://yann.lecun.com/exdb/mnist/, my results seems consistent compared to the results of linear classifiers without data preprocessing.
 
-P10: I used different climin optimisers (Gradient Descent, RMSProp, Lbfgs, Nonlinear Conjugate Gradient)
+P10: I used different climin optimisers (Gradient Descent, RMSProp, Lbfgs, Nonlinear Conjugate Gradient) for this task.
 
 P12: To avoid overfitting, we stop training when the validation error increases or does not decrease enough at some point. To implement that, I took inspiration from the early stopping mechanism proposed at http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping.
 
-P13: 
+P13: I could not achieve such an error rate on the test set using my implementation.
 
-Bonus question: It is a bad scientific practice because we are trying to tune the parameters of the classifier, and even modify the dataset, in order to reach a certain error rate on the test set. It does provide any improvement, and can be seen as cheating on the actual performance of the classifier.
+Bonus question: It is a bad scientific practice because we are trying to tune the classifier, and even modify the dataset, in order to reach a certain error rate on the test set. It does provide any improvement, and can be seen as cheating on the actual performance of the classifier.
 
 
 3. Two-layer neural network
@@ -63,11 +70,19 @@ Then I adapted the code to use it with climin optimisers.
 My implementation makes it possible to use different optimisation algorithms. It uses climin to create the minibatches, uses climin gradient descent and rmsprop optimisers. L1 and L2 regularisation are also available. 
 For early stopping, as in multiclass logistic regression implementation, I took inspiration from the early stopping mechanism proposed at http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping.
 
-P15: Using 300 hidden units with tanh activation functions and rmsprop as the initial optimisation method, my implementation can achieve an error rate on the test set of about 2.5% (parameters: learning rate=0.05, batch size=200)
+P15: Using 300 hidden units with tanh activation functions and rmsprop as the initial optimisation method, my implementation can achieve an error rate on the test set of about 2.5% (parameters: tanh activation function, learning rate=0.05, batch size=200, no momentum). Comparing with the database of results found at http://yann.lecun.com/exdb/mnist/, my results seems coherent.
 
-P16: 
+P16: The file activation_functions.png is a plot of the following functions.
+logistic sigmoid (theano.tensor.nnet.sigmoid, blue curve), varies from 0 to 1, very smooth at its inflection point 0.
+tanh f(x) = (theano.tensor.tanh, green curve), varies from -1 to +1, steepest than sigmoid at its inflection point 0.
+rectified linear neurons f(x)=max(0,x), using softplus function as approximation (we need the activation function to be differentiable) (theano.tensor.nnet.softplus, red curve), strictly increasing convex function, varies from 0 to +inf. The derivative of the softplus function is the sigmoid function.
+These three functions do not have the same variation domain, smoothness nor same shape in the case of softplus, thus it will influence weights initialization. Say we choose to initialize weights for activation function tanh with values chosen uniformly at random in the range [-a:a] (the tanh function being symmetric). Then for activation function sigmoid, as the variation domain is smaller and the curve smoother, we should spread the initial weights even more, so choose a range like [-delta*a:delta*a], delta > 1.
+According to the MLP tutorial (https://http://deeplearning.net/tutorial/mlp.html), we should initialize the weights with values chosen uniformly at random in the range [sqrt(-6./(n_in+n_hidden)):sqrt(6./(n_in+n_hidden))], and then choose choose delta=4 for sigmoid activation function.
+The softplus function as a totally different shape compared to the two previous ones, as it is unbounded when values goes to infinity. Thus to prevent activation values to grow too much, we should break the symmetry and initialize the weights with values chosen uniformly at random in a range like [-delta*a:1/delta*a].
+Testing my implement with choosing delta=4 for softplus activation function with the previous rule seems efficient.
+Concerning data preprocessing, we can suppose that centering the data around 0 in the case of a tanh activation function could be a efficient as the tanh function is an odd function. However, implementing this data preprocessing idea does not give better results than without data preprocessing (thus I do not use it in the following). 
 
-P19: Using RMSProp with learning rate = 0.004,  momentum = 0.001, batch size=100, we can achieve an error rate on test set of about 2%, with minimal error rate on validation set of less than 1.8%.
+P19: Using RMSProp with tanh activation function, learning rate = 0.004,  momentum = 0.001, batch size=100, we can achieve an error rate on test set of about 2%, with minimal error rate on validation set of less than 1.8%.
 
 
 
@@ -102,7 +117,7 @@ Bonus problem: see P22
 
 * BH-tSNE - file: tsne/bhtsne_mnist.py - usage: python bhtnse_mnist NUM_SAMPLES d
 
-P29: I used Barnes-Hut implementation with Python wrapper provided at http://lvdmaaten.github.io/tsne to reproduce Figure 5 of the Barnes-Hut-SNE paper, as it is way faster than the t-SNE Python implementation, and requires less memory space.
+P29: For this problem, I chose to use Barnes-Hut implementation with Python wrapper provided at http://lvdmaaten.github.io/tsne to reproduce Figure 5 of the Barnes-Hut-SNE paper. Initially I used the standard t-SNE Python implementation, but it is much slower than the t-SNE Python implementation, and requires much more memory space (and thus could not handle the entire MNIST set)
 You can modify the parameter d which affect the spacing between digits, and thus how dense the figure will be (if d is high, say 3, the digits will be relatively far from each  other, if d is low, say 1, digits will be very close to each other).
 Remarks: the script will save the results of bhtsne on the data in a pkl.gz file, so that you can modify d without having to recompute bhtsne on the data.
 
@@ -110,7 +125,7 @@ Remarks: the script will save the results of bhtsne on the data in a pkl.gz file
 6. k-Means
 ----------
 
-P30: To implement k-Means I followed the paper by Adam Coates.
+P30: To implement k-Means I followed the paper by Adam Coates. I also implemented a function to be able to correctly rescale the images from CIFAR-10 to any size in the RGB format.
 
 P31: For this task I rescale the images from 32x32 to 12x12, and choose 500 centres.
 Visualisation of the receptive fields is not very conclusive regarding the colors, as I think I have a problem rendering the RGB components.

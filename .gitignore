@@ -8,3 +8,4 @@ nn/
 *nohup.out
 tsne/bhtsne/
 tsne/compressed_results/
+nn/plot_functions.py

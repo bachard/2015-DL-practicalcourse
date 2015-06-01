@@ -278,7 +278,7 @@ if __name__ == "__main__":
     train_logreg(
         optimizer="GradientDescent",
         learning_rate=0.08,
-        momentum=0.015,
-        batch_size=80,
+        momentum=0.01,
+        batch_size=100,
         max_iters=40
     )
