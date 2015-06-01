@@ -12,6 +12,7 @@ import climin.util
 
 from matplotlib import pyplot as plt
 
+import time
 # We import the utils file
 import sys
 sys.path.append("..")
@@ -223,6 +224,7 @@ def train_SPA(dataset="../datasets/mnist.pkl.gz", n_in=28*28, n_hidden=5, learni
                     
 
 if __name__ == '__main__':
+    start = time.time()
     train_SPA(
         n_hidden=28*28,
         learning_rate=0.1,
@@ -235,4 +237,5 @@ if __name__ == '__main__':
         max_iters=15
     )
         
-        
+    end = time.time()
+    print("Total running time: {}s".format(end-start))

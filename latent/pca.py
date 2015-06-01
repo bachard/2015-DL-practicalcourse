@@ -5,6 +5,7 @@ import gzip
 import cPickle
 from matplotlib import pyplot as plt
 import sys
+import time
 
 class PCA(object):
 
@@ -124,6 +125,7 @@ def scatterplot(pca, x_train, y_train, n_classes, outputfile, imgsize=50):
     plt.savefig(outputfile)
 
 if __name__ == '__main__':
+    start = time.time()
     if len(sys.argv) != 2:
         print("Wrong number of parameters (usage: pca.py dataset_name (dataset_name=MNIST or CIFAR))")
     else:
@@ -133,3 +135,6 @@ if __name__ == '__main__':
             plot_cifar(imgsize=100)
         else:
             print("This dataset is unknown (available datasets: MNIST, CIFAR)")
+            
+    end = time.time()
+    print("Total running time: {}s".format(end-start))

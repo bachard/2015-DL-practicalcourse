@@ -8,6 +8,7 @@ import os.path
 from scipy.misc import imresize
 from matplotlib import pyplot as plt
 
+import time
 # We import the utils file
 import sys
 sys.path.append("..")
@@ -224,9 +225,12 @@ def train_kmeans(k=500, e_zca=0.01, n_iters=10, n_cifar_batches=5):
     plt.savefig("repflds.png", dpi=300)
     
 if __name__ == "__main__":
+    start = time.time()
     train_kmeans(
         k=500,
         e_zca=0.05,
         n_iters=10,
         n_cifar_batches=5
     )
+    end = time.time()
+    print("Total running time: {}s".format(end-start))

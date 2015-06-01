@@ -13,6 +13,7 @@ import itertools
 from matplotlib import pyplot as plt
 
 import copy
+import time
 # We import the utils file
 import sys
 sys.path.append("..")
@@ -275,10 +276,13 @@ def train_logreg(dataset='../datasets/mnist.pkl.gz', n_in=28*28, n_out=10, optim
 
 
 if __name__ == "__main__":
+    start = time.time()
     train_logreg(
         optimizer="GradientDescent",
-        learning_rate=0.08,
-        momentum=0.01,
-        batch_size=100,
+        learning_rate=0.1,
+        momentum=0.0,
+        batch_size=200,
         max_iters=40
     )
+    end = time.time()
+    print("Total running time: {}s".format(end-start))

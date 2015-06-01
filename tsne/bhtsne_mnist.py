@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import bhtsne.bhtsne as bhtsne
 import os.path
 import sys
-
+import time
 
 """
 Python procedure that produces a figure similar to the Figure 5
@@ -17,6 +17,8 @@ You need to compile bhtsne and place it along with the python wrapper in the fol
 :param NUM_SAMPLES: number of samples to produce the figure with
 :param d: parameter that controls the spacing between digits
 """
+
+start = time.time()
 
 if len(sys.argv) >= 2:
     NUM_SAMPLES = min(int(sys.argv[1]), 70000)
@@ -97,3 +99,6 @@ plt.figure(figsize=(res.shape[0]/300, res.shape[1]/300))
 plt.axis("off")
 plt.imshow(res)
 plt.savefig('bhtsne{}.png'.format(NUM_SAMPLES), dpi=300, bbox_inches='tight')
+
+end = time.time()
+print("Total running time: {}s".format(end-start))

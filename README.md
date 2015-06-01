@@ -40,6 +40,8 @@ Questions:
 
 * To evaluate my implementations results on MNIST, I used the database provided at http://yann.lecun.com/exdb/mnist/
 
+* I placed relevant plots for each task in the results folder of each subfolder.
+
 2. Multiclass logistic regression
 ---------------------------------
 * LogisticRegression - file: logreg/logreg.py - usage: python logreg.py
@@ -56,9 +58,9 @@ P10: I used different climin optimisers (Gradient Descent, RMSProp, Lbfgs, Nonli
 
 P12: To avoid overfitting, we stop training when the validation error increases or does not decrease enough at some point. To implement that, I took inspiration from the early stopping mechanism proposed at http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping.
 
-P13: I could not achieve such an error rate on the test set using my implementation.
+P13: I could approach such an error rate with my implementation using RmsProp, learning rate=0.0035, momentum=0.0008, batch_size=100, giving me a minimum error rate on test set of 7.16%.
 
-Bonus question: It is a bad scientific practice because we are trying to tune the classifier, and even modify the dataset, in order to reach a certain error rate on the test set. It does provide any improvement, and can be seen as cheating on the actual performance of the classifier.
+Bonus question: It is a bad scientific practice because we are trying to tune the classifier, and, in more problematic manner, modify the dataset, in order to reach a certain error rate on the test set. It does provide any improvement, and can be seen as cheating on the actual performance of the classifier.
 
 
 3. Two-layer neural network
@@ -69,6 +71,7 @@ P14: To implement a neural network with one hidden layer, I first read and follo
 Then I adapted the code to use it with climin optimisers.
 My implementation makes it possible to use different optimisation algorithms. It uses climin to create the minibatches, uses climin gradient descent and rmsprop optimisers. L1 and L2 regularisation are also available. 
 For early stopping, as in multiclass logistic regression implementation, I took inspiration from the early stopping mechanism proposed at http://deeplearning.net/tutorial/gettingstarted.html#opt-early-stopping.
+Additionally, for the optimisation method, I had the idea of combining rmsprop with standard gradient descent, in sequential manner, that is we first optimise using rmsprop and then try to improve results by optmising with standard gradient descent. My idea was motivated by the fact that rmsprop is faster but variates more than standard gradient descent, thus I thought it was worth trying to finish optimisation using a more stable optimiser. You can use this feature by setting a non zero number of iterations for the gradient descent optimiser (you can tune learning rate and momentum parameters for both optimisers).
 
 P15: Using 300 hidden units with tanh activation functions and rmsprop as the initial optimisation method, my implementation can achieve an error rate on the test set of about 2.5% (parameters: tanh activation function, learning rate=0.05, batch size=200, no momentum). Comparing with the database of results found at http://yann.lecun.com/exdb/mnist/, my results seems coherent.
 
@@ -83,6 +86,7 @@ Testing my implement with choosing delta=4 for softplus activation function with
 Concerning data preprocessing, we can suppose that centering the data around 0 in the case of a tanh activation function could be a efficient as the tanh function is an odd function. However, implementing this data preprocessing idea does not give better results than without data preprocessing (thus I do not use it in the following). 
 
 P19: Using RMSProp with tanh activation function, learning rate = 0.004,  momentum = 0.001, batch size=100, we can achieve an error rate on test set of about 2%, with minimal error rate on validation set of less than 1.8%.
+Using RMSProp + GradientDescent with sigmoid activation function, learning_rate=0.05, momentum=0.01 for GD, learning_rate_rmsprop=0.004, momentum_rmsprop=0.001, batch_size=100, max_iters_rmsprop=20, max_iters_gd=20, we can achieve an error rate on test of 1.69%.
 
 
 
