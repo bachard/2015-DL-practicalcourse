@@ -4,7 +4,6 @@
 *.gz
 *.pkl
 datasets/cifar-10-batches-py
-nn/
 *nohup.out
 tsne/bhtsne/
 tsne/compressed_results/
